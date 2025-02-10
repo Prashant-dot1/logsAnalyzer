@@ -3,6 +3,8 @@ use async_trait::async_trait;
 
 /* inner modules */
 pub mod file_source;
+pub mod network_source;
+
 
 pub struct LogLine {
     pub content: String,
