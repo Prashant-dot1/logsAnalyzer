@@ -27,6 +27,14 @@ impl FileLogSource {
 
 #[async_trait::async_trait]
 impl LogSource for FileLogSource {
+
+    async fn init(&mut self) -> Result<(), Box<dyn Error>> {
+
+        let file = tokio::fs::File::open(&self.path).await?;
+        self.reader = Some(BufReader::new(file));
+
+        Ok(())
+    }
     
     async fn read_line (&mut self) -> Result<Option<LogLine>, Box<dyn Error>> {
 
@@ -36,7 +44,9 @@ impl LogSource for FileLogSource {
             let mut line = String::new();
             let bytes_read = reader.read_line(&mut line).await?;
 
-            if bytes_read == 0{
+
+            // this means we have reached EOF
+            if bytes_read == 0 {
                 return Ok(None)
             }
 
@@ -51,6 +61,10 @@ impl LogSource for FileLogSource {
         else {
             Err("Source not initialised".into())
         }
-        
+    }
+
+    async fn close(&mut self) -> Result<(), Box<dyn Error>> {
+        self.reader = None;
+        Ok(())
     }
 }
