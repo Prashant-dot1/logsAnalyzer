@@ -3,6 +3,7 @@ use std::error::Error;
 use crate::ingest::LogLine;
 
 pub mod plain_text;
+pub mod json;
 
 
 #[derive(Debug)]
