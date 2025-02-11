@@ -12,7 +12,7 @@ async fn main() -> Result<(), Box<dyn Error>> {
 
         print!("new client connected: {}", addr);
 
-        tokio::spawn(async move {
+        let handler = tokio::spawn(async move {
             let mut counter = 0;
 
             loop {
