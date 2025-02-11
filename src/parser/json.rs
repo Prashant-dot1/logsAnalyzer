@@ -67,3 +67,44 @@ impl LogParser for JsonParser {
 
     }
 }
+
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    
+    #[tokio::test]
+    async fn parse_valid_json() {
+        let parser = JsonParser::new();
+
+        let json_content = r#"{
+            "message": "This is a test logging info",
+            "level" : "info",
+            "tags": "dev",
+            "username": "Prashant",
+            "timestamp": "2024-03-15T10:00:00Z"
+        }"#;
+
+
+        let log_line = LogLine {
+            content: json_content.to_string(),
+            source: "test".to_string(),
+            timestamp : chrono::Utc::now()
+        };
+
+        let res = parser.parse(log_line).await.unwrap();
+
+        assert_eq!(res.message , "This is a test logging info".to_string());
+        assert_eq!(res.level , Some(Level::Info));
+
+
+        if let Value::Object(map_metadata) = res.metadata {
+            assert_eq!(map_metadata.get("tags").unwrap().as_str().unwrap() , "dev" );
+        }
+        else {
+            panic!("metadata is not an object");
+        }
+
+
+    }
+}

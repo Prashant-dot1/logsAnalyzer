@@ -6,7 +6,7 @@ pub mod plain_text;
 pub mod json;
 
 
-#[derive(Debug)]
+#[derive(Debug,PartialEq)]
 pub struct ParsedLog {
     pub timestamp: Option<chrono::DateTime<chrono::Utc>>,
     pub level: Option<Level>,
@@ -14,7 +14,7 @@ pub struct ParsedLog {
     pub metadata: serde_json::Value
 }
 
-#[derive(Debug)]
+#[derive(Debug, PartialEq)]
 pub enum Level {
     Info,
     Error,
