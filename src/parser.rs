@@ -1,4 +1,5 @@
 use std::error::Error;
+use std::any::Any;
 
 use crate::ingest::LogLine;
 
@@ -25,4 +26,5 @@ pub enum Level {
 #[async_trait::async_trait]
 pub trait LogParser : Send + Sync + 'static {
     async fn parse(&self, log_line : LogLine) -> Result<ParsedLog, Box<dyn Error>>;
+    fn as_any(&self) -> &dyn Any;
 }

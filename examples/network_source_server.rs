@@ -17,7 +17,7 @@ async fn main() -> Result<(), Box<dyn Error>> {
 
             loop {
                 let logging = format!(
-                    "<<<Content: {} LOG-{} testing >>>\n",
+                    "{{\"message\": \"{} LOG-{} testing\",\"level\": \"info\", \"service\": \"network-example-server\"}}\n",
                     chrono::Utc::now(),
                     counter
                 );

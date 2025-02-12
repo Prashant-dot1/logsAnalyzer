@@ -1,4 +1,4 @@
-use std::error::Error;
+use std::{any::Any, error::Error};
 
 use serde_json::Value;
 
@@ -66,6 +66,11 @@ impl LogParser for JsonParser {
 
 
     }
+
+    fn as_any(&self) -> &dyn Any {
+        self
+    }
+    
 }
 
 

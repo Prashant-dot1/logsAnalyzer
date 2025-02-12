@@ -1,8 +1,8 @@
-use std::error::Error;
+use std::{any::Any, error::Error};
 
 use crate::ingest::LogLine;
 
-use super::{LogParser, ParsedLog};
+use super::{json::JsonParser, plain_text::PlainTextParser, LogParser, ParsedLog};
 
 pub struct ParserRegistry {
     parsers: Vec<Box<dyn LogParser>>
@@ -23,13 +23,15 @@ impl ParserRegistry {
         serde_json::from_str::<serde_json::Value>(content).is_ok()
     }
 
-    fn select_parser(&self, log_line : &LogLine) -> Option<Box<dyn LogParser>> {
+    fn select_parser(&self, log_line : &LogLine) -> Option<&Box<dyn LogParser>> {
 
         if ParserRegistry::try_parse_json(&log_line.content) {
-            todo!()
+            println!("Parser selected : JsonParser");
+            self.parsers.iter().find(|p| p.as_any().is::<JsonParser>())
         }
         else {
-            todo!()
+            println!("Parser selected : PlainTextParser");
+            self.parsers.iter().find(|p| p.as_any().is::<PlainTextParser>())
         }
     }
 }
@@ -42,4 +44,36 @@ impl LogParser for ParserRegistry {
 
         parser.parse(log_line).await
     }
+
+    fn as_any(&self) -> &dyn Any {
+        self
+    }
+}
+
+
+#[cfg(test)]
+mod tests {
+    use crate::{ingest::{file_source::FileLogSource, LogSource}, parser::registry};
+
+    use super::*;
+
+
+    #[tokio::test]
+    async fn test_registry() {
+
+        let mut registry = ParserRegistry::new();
+        registry.register(JsonParser::new());
+        registry.register(PlainTextParser::new());
+
+        
+        let mut file = FileLogSource::new("./example.log");
+        file.init().await.unwrap();
+
+        while let Some(log_line) = file.read_line().await.unwrap() {
+            let res = registry.parse(log_line).await.unwrap();
+
+            println!("The parsed log is: {:?}", res);
+        }
+    }
+    
 }
