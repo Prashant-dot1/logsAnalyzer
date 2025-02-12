@@ -2,6 +2,7 @@ use std::error::Error;
 
 use crate::ingest::LogLine;
 
+pub mod registry;
 pub mod plain_text;
 pub mod json;
 
@@ -22,6 +23,6 @@ pub enum Level {
 }
 
 #[async_trait::async_trait]
-pub trait LogParser {
+pub trait LogParser : Send + Sync + 'static {
     async fn parse(&self, log_line : LogLine) -> Result<ParsedLog, Box<dyn Error>>;
 }

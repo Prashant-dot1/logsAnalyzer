@@ -1,5 +1,5 @@
 use ingest::{file_source::FileLogSource, network_source::NetworkLogSource, LogSource};
-use parser::{plain_text::PlainTextParser, LogParser};
+use parser::{json::JsonParser, plain_text::PlainTextParser, registry::ParserRegistry, LogParser};
 
 
 pub mod ingest;
@@ -8,8 +8,10 @@ pub mod parser;
 #[tokio::main]
 async fn main() -> Result<(), Box<dyn std::error::Error>> {
 
-    // we cerate a parser
-    let parser = PlainTextParser::new();
+    // we register the 2 different types of parsers we have
+    let mut registry = ParserRegistry::new();
+    registry.register(PlainTextParser::new());
+    registry.register(JsonParser::new());
 
     let mut file_source = FileLogSource::new("./example.log");
     file_source.init().await?;
@@ -18,7 +20,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         // println!("[{}] {}: {}",
         //     log_line.timestamp,
         //     log_line.source,
-        let parsed_log = parser.parse(log_line).await?;
+        let parsed_log = registry.parse(log_line).await?;
         println!("parsed log line: {:?}" , parsed_log);
     }
 
@@ -38,7 +40,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
             //     log_line.content
             // );
 
-            let parsed_log = parser.parse(log_line).await?;
+            let parsed_log = registry.parse(log_line).await?;
             println!("parsed log line network: {:?}", parsed_log);
         }
     }
