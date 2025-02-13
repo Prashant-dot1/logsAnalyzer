@@ -11,7 +11,8 @@ use async_trait;
 
 pub struct FileLogSource {
     path: PathBuf,
-    reader: Option<BufReader<File>>
+    reader: Option<BufReader<File>>,
+    buffer: String
 }
 
 impl FileLogSource {
@@ -20,8 +21,13 @@ impl FileLogSource {
         
         Self 
         { path: path.as_ref().to_owned(),
-          reader: None
+          reader: None,
+            buffer: String::new()
         }
+    }
+
+    fn is_valid_json(content : &String) -> bool {
+        serde_json::from_str::<serde_json::Value>(&content).is_ok()
     }
 }
 
@@ -41,22 +47,24 @@ impl LogSource for FileLogSource {
 
         if let Some(reader) = &mut self.reader {
 
-            let mut line = String::new();
-            let bytes_read = reader.read_line(&mut line).await?;
+            loop {
+                let mut line = String::new();
+                let bytes_read =reader.read_line(&mut line).await?;
 
-
-            // this means we have reached EOF
-            if bytes_read == 0 {
-                return Ok(None)
-            }
-
-            Ok(Some(
-                LogLine {
-                    content: line.trim().to_string(),
-                    source: self.path.to_string_lossy().to_string(), 
-                    timestamp: Utc::now()
+                if bytes_read == 0 {
+                    return Ok(None);
                 }
-            ))
+
+                self.buffer.push_str(&line);
+                if FileLogSource::is_valid_json(&self.buffer) {
+                    let content = std::mem::take(&mut self.buffer);
+                    return Ok(Some(LogLine {
+                        content : content.trim().to_string(),
+                        source: self.path.to_string_lossy().to_string(),
+                        timestamp: chrono::Utc::now()
+                    }));
+                }
+            }
         }
         else {
             Err("Source not initialised".into())

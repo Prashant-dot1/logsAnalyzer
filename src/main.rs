@@ -43,6 +43,9 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
             let parsed_log = registry.parse(log_line).await?;
             println!("parsed log line network: {:?}", parsed_log);
         }
+        else {
+            println!("No log line found")
+        }
     }
 
     network_source.close().await?;

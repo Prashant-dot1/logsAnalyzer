@@ -21,13 +21,23 @@ impl JsonParser {
             _ => None
         }
     }
+
+    
+    fn normalize_json(content: &str) -> String {
+        // Remove any leading/trailing whitespace and newlines
+        content.trim()
+            .replace('\n', "")
+            .replace('\r', "")
+            .replace("  ", " ")
+    }
 }
 
 #[async_trait::async_trait]
 impl LogParser for JsonParser {
     async fn parse(&self, log_line : LogLine) -> Result<ParsedLog, Box<dyn Error>> {
-
-        let json_value = serde_json::from_str::<Value>(&log_line.content)?;
+        // Try to parse the normalized JSON string
+        let normalized = JsonParser::normalize_json(&log_line.content);
+        let json_value = serde_json::from_str::<Value>(&normalized)?;
 
         let message = json_value.get("message")
                         .and_then(|v| v.as_str())

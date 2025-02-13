@@ -16,13 +16,31 @@ async fn main() -> Result<(), Box<dyn Error>> {
             let mut counter = 0;
 
             loop {
-                let logging = format!(
-                    "{{\"message\": \"{} LOG-{} testing\",\"level\": \"info\", \"service\": \"network-example-server\"}}\n",
-                    chrono::Utc::now(),
-                    counter
-                );
+                // Alternate between single-line and multi-line JSON
+                let logging = if counter % 2 == 0 {
+                    format!(
+                        "{{\"message\": \"{} LOG-first-{} testing\", \"level\": \"info\", \"service\": \"network-example-server\"}}\n",
+                        chrono::Utc::now(),
+                        counter
+                    )
+                } else {
+                    format!(
+                        r#"{{
+                            "message": "{} LOG-second-{} testing",
+                            "level": "info",
+                            "service": "network-example-server",
+                            "metadata": {{
+                                "counter": {}
+                            }}
+                        }}
+                        "#,
+                        chrono::Utc::now(),
+                        counter,
+                        counter
+                    )
+                };
 
-                println!("{}",logging);
+                println!("Sending: {}", logging);
 
                 if let Err(e) = socket.write_all(logging.as_bytes()).await {
                     println!("Error writing to client: {}", e);
