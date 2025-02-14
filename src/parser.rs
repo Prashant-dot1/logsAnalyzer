@@ -24,7 +24,7 @@ pub enum Level {
 }
 
 #[async_trait::async_trait]
-pub trait LogParser : Send + Sync + 'static {
+pub trait LogParser : 'static + Send + Sync {
     async fn parse(&self, log_line : LogLine) -> Result<ParsedLog, Box<dyn Error>>;
     fn as_any(&self) -> &dyn Any;
 }

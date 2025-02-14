@@ -13,7 +13,7 @@ pub struct LogLine {
 }
 
 #[async_trait]
-pub trait LogSource {
+pub trait LogSource : Send + Sync {
     // some way to initlialise the log source
     async fn init(&mut self) -> Result<(), Box<dyn Error>>;
 
