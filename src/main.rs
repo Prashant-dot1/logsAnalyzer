@@ -32,7 +32,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
 
     network_source.init().await?;
 
-    loop {
+    for _ in 0..5 {
         if let Some(log_line) = network_source.read_line().await? {
             // println!("[{}] {}: {}",
             //     log_line.timestamp,

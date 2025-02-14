@@ -12,32 +12,17 @@ async fn main() -> Result<(), Box<dyn Error>> {
 
         print!("new client connected: {}", addr);
 
-        let handler = tokio::spawn(async move {
+        let _handler = tokio::spawn(async move {
             let mut counter = 0;
 
             loop {
                 // Alternate between single-line and multi-line JSON
-                let logging = if counter % 2 == 0 {
+                let logging =
                     format!(
                         "{{\"message\": \"{} LOG-first-{} testing\", \"level\": \"info\", \"service\": \"network-example-server\"}}\n",
                         chrono::Utc::now(),
                         counter
-                    )
-                } else {
-                    format!(
-                        r#"{{
-                            "message": "{} LOG-second-{} testing",
-                            "level": "info",
-                            "service": "network-example-server",
-                            "metadata": {{
-                                "counter": {}
-                            }}
-                        }}"#,
-                        chrono::Utc::now(),
-                        counter,
-                        counter
-                    )
-                };
+                    );
 
                 println!("Sending: {}", logging);
 
