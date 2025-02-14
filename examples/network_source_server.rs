@@ -32,8 +32,7 @@ async fn main() -> Result<(), Box<dyn Error>> {
                             "metadata": {{
                                 "counter": {}
                             }}
-                        }}
-                        "#,
+                        }}"#,
                         chrono::Utc::now(),
                         counter,
                         counter

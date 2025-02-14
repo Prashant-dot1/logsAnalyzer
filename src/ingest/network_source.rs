@@ -19,16 +19,24 @@ impl NetworkLogSource {
         }
     }
 
-    fn try_extracting_json(content : &String) -> Option<(String , String)> {
+    fn try_extracting_json(content: &String) -> Option<(String, String)> {
+        println!("Trying to extract JSON from: {}", content);
         
         let mut depth = 0;
         let mut within_json_string = false;
         let mut escape_char_next = false;
         let mut start_idx = None;
+        let mut current_json = String::new();
 
+        // First normalize the content by removing extra whitespace but preserving structure
+        let normalized = content
+            .lines()
+            .map(|line| line.trim())
+            .collect::<Vec<_>>()
+            .join("");
 
-        // finding the fist character
-        for (i, c) in content.chars().enumerate() {
+        // finding the first opening brace
+        for (i, c) in normalized.chars().enumerate() {
             if c == '{' && !within_json_string {
                 start_idx = Some(i);
                 break;
@@ -36,28 +44,31 @@ impl NetworkLogSource {
         }
 
         if start_idx.is_none() {
+            println!("No JSON start found");
             return None;
         }
 
-        // satrt parsing from the opening brace
-        for (i, c) in content[start_idx.unwrap()..].chars().enumerate() {
+        // start parsing from the opening brace
+        for (i, c) in normalized[start_idx.unwrap()..].chars().enumerate() {
+            current_json.push(c);
+
             if escape_char_next {
                 escape_char_next = false;
                 continue;
             }
 
             match c {
-                '\\' if within_json_string => escape_char_next = true ,
+                '\\' if within_json_string => escape_char_next = true,
                 '"' => within_json_string = !within_json_string,
-                '{' if within_json_string => depth +=1,
-                '}' if within_json_string => {
+                '{' if !within_json_string => depth += 1,
+                '}' if !within_json_string => {
                     depth -= 1;
                     if depth == 0 {
-                        let json_extract = &content[start_idx.unwrap()..=start_idx.unwrap() + i];
-
-                        if serde_json::from_str::<serde_json::Value>(json_extract).is_ok() {
-                            let remainder = content[start_idx.unwrap() + i + 1..].to_string();
-                            return Some((json_extract.to_string() , remainder));
+                        if serde_json::from_str::<serde_json::Value>(&current_json).is_ok() {
+                            let remainder = normalized[start_idx.unwrap() + i + 1..].to_string();
+                            println!("Valid JSON found: {}", current_json);
+                            println!("Remainder: {}", remainder);
+                            return Some((current_json, remainder));
                         }
                     }
                 },
@@ -65,6 +76,7 @@ impl NetworkLogSource {
             }
         }
 
+        println!("No complete JSON found");
         None
 
     }
@@ -109,6 +121,8 @@ impl LogSource for NetworkLogSource {
             self.buffer.push_str(&line);
             if let Some((json,remainder)) = NetworkLogSource::try_extracting_json(&self.buffer) {
                 // found a valid json , need to update the buffer
+                
+                println!("remainder: {}", remainder);
                 self.buffer = remainder;
 
                 return Ok(Some(LogLine { content: json, source: format!("network {}", self.address), timestamp: chrono::Utc::now() }));
