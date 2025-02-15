@@ -18,7 +18,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error + Send + Sync>> {
     let mut engine = Engine::new(Box::new(registry));
 
     // Add sources , need to figure out a way by which this add_source can be done dynamically
-    engine.add_source(Box::new(FileLogSource::new("./example.log")));
+    // engine.add_source(Box::new(FileLogSource::new("./example.log")));
     engine.add_source(Box::new(NetworkLogSource::new("127.0.0.1:8888".to_string())));
 
     // Run engine and get receiver

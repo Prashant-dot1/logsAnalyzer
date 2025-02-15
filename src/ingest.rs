@@ -1,4 +1,4 @@
-use std::error::Error;
+use std::{error::Error};
 use async_trait::async_trait;
 
 /* inner modules */
@@ -15,9 +15,9 @@ pub struct LogLine {
 #[async_trait]
 pub trait LogSource : Send + Sync {
     // some way to initlialise the log source
-    async fn init(&mut self) -> Result<(), Box<dyn Error>>;
+    async fn init(&mut self) -> Result<(), Box<dyn Error + Send + Sync>>;
 
-    async fn read_line(&mut self) -> Result<Option<LogLine>, Box<dyn Error>>;
+    async fn read_line(&mut self) -> Result<Option<LogLine>, Box<dyn Error + Send + Sync>>;
 
-    async fn close(&mut self) -> Result<(), Box<dyn Error>>;
+    async fn close(&mut self) -> Result<(), Box<dyn Error + Send + Sync>>;
 }

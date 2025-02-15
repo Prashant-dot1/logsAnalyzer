@@ -34,7 +34,7 @@ impl JsonParser {
 
 #[async_trait::async_trait]
 impl LogParser for JsonParser {
-    async fn parse(&self, log_line : LogLine) -> Result<ParsedLog, Box<dyn Error>> {
+    async fn parse(&self, log_line : LogLine) -> Result<ParsedLog, Box<dyn Error + Send + Sync>> {
         // Try to parse the normalized JSON string
         let normalized = JsonParser::normalize_json(&log_line.content);
         let json_value = serde_json::from_str::<Value>(&normalized)?;

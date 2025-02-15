@@ -86,7 +86,7 @@ impl NetworkLogSource {
 #[async_trait]
 impl LogSource for NetworkLogSource {
 
-    async fn init(&mut self) -> Result<(), Box<dyn Error>> {
+    async fn init(&mut self) -> Result<(), Box<dyn Error + Send + Sync>> {
 
         let stream = TcpStream::connect(&self.address).await?;
         self.reader = Some(BufReader::new(stream));
@@ -94,7 +94,7 @@ impl LogSource for NetworkLogSource {
         Ok(())
     }
 
-    async fn read_line(&mut self) -> Result<Option<LogLine>, Box<dyn Error>> {
+    async fn read_line(&mut self) -> Result<Option<LogLine>, Box<dyn Error + Send + Sync>> {
 
         if let Some(reader) = &mut self.reader {
 
@@ -142,7 +142,7 @@ impl LogSource for NetworkLogSource {
         }
     }
 
-    async fn close(&mut self) -> Result<(), Box<dyn Error>> {
+    async fn close(&mut self) -> Result<(), Box<dyn Error + Send + Sync>> {
         self.reader = None;
         self.buffer.clear();
         Ok(())

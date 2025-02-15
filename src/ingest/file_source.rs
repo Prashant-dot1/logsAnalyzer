@@ -34,7 +34,7 @@ impl FileLogSource {
 #[async_trait::async_trait]
 impl LogSource for FileLogSource {
 
-    async fn init(&mut self) -> Result<(), Box<dyn Error>> {
+    async fn init(&mut self) -> Result<(), Box<dyn Error + Send + Sync>> {
 
         let file = tokio::fs::File::open(&self.path).await?;
         self.reader = Some(BufReader::new(file));
@@ -42,7 +42,7 @@ impl LogSource for FileLogSource {
         Ok(())
     }
     
-    async fn read_line (&mut self) -> Result<Option<LogLine>, Box<dyn Error>> {
+    async fn read_line (&mut self) -> Result<Option<LogLine>, Box<dyn Error + Send + Sync>> {
 
 
         if let Some(reader) = &mut self.reader {
@@ -71,7 +71,7 @@ impl LogSource for FileLogSource {
         }
     }
 
-    async fn close(&mut self) -> Result<(), Box<dyn Error>> {
+    async fn close(&mut self) -> Result<(), Box<dyn Error + Send + Sync>> {
         self.reader = None;
         Ok(())
     }

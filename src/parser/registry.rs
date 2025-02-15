@@ -39,7 +39,7 @@ impl ParserRegistry {
 
 #[async_trait::async_trait]
 impl LogParser for ParserRegistry {
-    async fn parse(&self, log_line : LogLine) -> Result<ParsedLog, Box<dyn Error>> {
+    async fn parse(&self, log_line : LogLine) -> Result<ParsedLog, Box<dyn Error + Send + Sync>> {
         let parser = self.select_parser(&log_line).ok_or("no parser found")?;
 
         parser.parse(log_line).await
