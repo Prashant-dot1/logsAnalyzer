@@ -5,7 +5,7 @@ use async_trait::async_trait;
 pub mod file_source;
 pub mod network_source;
 
-
+#[derive(Clone)]
 pub struct LogLine {
     pub content: String,
     pub source: String,

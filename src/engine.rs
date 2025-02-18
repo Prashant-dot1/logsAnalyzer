@@ -1,5 +1,6 @@
 use std::{error::Error, sync::Arc};
 
+
 use tokio::sync::mpsc;
 
 use crate::{ingest::LogSource, parser::{LogParser, ParsedLog}};
@@ -32,16 +33,34 @@ impl Engine {
             let parser_clone = self.parser_registry.clone();
 
             tokio::spawn(async move {
+                let mut batch = Vec::with_capacity(100);
+
                 while let Ok(Some(log_line)) = source.read_line().await {
-                    match parser_clone.parse(log_line).await {
-                        Ok(parsed_log) => {
-                            if tx_clone.send(parsed_log).await.is_err() {
-                                break;
+
+                    batch.push(log_line);
+
+                    if batch.len() >= 100 {
+
+                        let futures = batch.iter()
+                        .map(|log_line| {
+                            let parser = parser_clone.clone();
+                            async move {
+                                parser.parse(log_line.clone()).await
                             }
-                        },
-                        Err(e) => {
-                            eprintln!("Error parsing log: {}", e);
+                        }).collect::<Vec<_>>();
+
+                        let results = futures::future::join_all(futures).await;
+
+
+                        for res in results {
+                            if let Ok(parsed_log) = res {
+                                if tx_clone.send(parsed_log).await.is_err() {
+                                    break;
+                                }
+                            }   
                         }
+
+                        batch.clear();
                     }
                 }
                 let _ = source.close().await;
