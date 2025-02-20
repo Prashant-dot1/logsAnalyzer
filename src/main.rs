@@ -5,6 +5,7 @@ use engine::Engine;
 pub mod ingest;
 pub mod parser;
 pub mod engine;
+pub mod analytics;
 
 #[tokio::main]
 async fn main() -> Result<(), Box<dyn std::error::Error + Send + Sync>> {
