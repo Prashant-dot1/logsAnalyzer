@@ -1,18 +1,22 @@
 use std::{error::Error, sync::Arc};
 
 
+use futures::lock::Mutex;
 use tokio::sync::mpsc;
 
-use crate::{ingest::LogSource, parser::{LogParser, ParsedLog}};
+use crate::{analytics::{self, LogAnalytics}, ingest::LogSource, parser::{LogParser, ParsedLog}};
 
 pub struct Engine {
     sources : Vec<Box<dyn LogSource>>,
-    parser_registry : Arc<Box<dyn LogParser>>
+    parser_registry : Arc<Box<dyn LogParser>>,
+    analytics: Arc<Mutex<LogAnalytics>>
 }
 
 impl Engine {
     pub fn new(parser_registry : Box<dyn LogParser>) -> Self {
-        Self { sources: Vec::new(), parser_registry: Arc::new(parser_registry) }
+        Self { sources: Vec::new(), 
+            parser_registry: Arc::new(parser_registry) , 
+            analytics : Arc::new(Mutex::new(LogAnalytics::new(100)))}
     }
 
     pub fn add_source(&mut self, source : Box<dyn LogSource>) {
@@ -31,6 +35,7 @@ impl Engine {
         for mut source in std::mem::take(&mut self.sources) {
             let tx_clone = tx.clone(); 
             let parser_clone = self.parser_registry.clone();
+            let analytics_clone = self.analytics.clone();
 
             tokio::spawn(async move {
                 let mut batch = Vec::with_capacity(100);
@@ -54,6 +59,15 @@ impl Engine {
 
                         for res in results {
                             if let Ok(parsed_log) = res {
+                                let analytics = analytics_clone.clone();
+                                let log_clone = parsed_log.clone();
+                                
+                                tokio::spawn(async move {
+                                    let analytics_lock = analytics.lock();
+
+                                    analytics_lock.await.process_log(log_clone);
+                                });
+
                                 if tx_clone.send(parsed_log).await.is_err() {
                                     break;
                                 }

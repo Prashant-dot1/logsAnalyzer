@@ -1,4 +1,4 @@
-use std::{collections::HashMap, fs::metadata, time::Duration};
+use std::{collections::HashMap, time::Duration};
 use chrono::{DateTime, Utc};
 use crate::parser::{Level, ParsedLog};
 
@@ -31,10 +31,7 @@ impl LogAnalytics {
                 .unwrap_or("unknown")
                 .to_string();
 
-            self.error_counts.entry(error_type).or_insert(0);
-
-            let mut val = self.error_counts.get_mut(&error_type).unwrap();
-            val += 1;
+            *self.error_counts.entry(error_type).or_insert(0) += 1;
         }
 
 
@@ -53,7 +50,7 @@ impl LogAnalytics {
             self.resource_usage
             .entry(cpu_usage.to_string())
             .or_default()
-            .push((log.timestamp.unwrap_or_else(|| Utc::now()) , cpu_usage.parse::<f64>()));
+            .push((log.timestamp.unwrap_or_else(|| Utc::now()) , cpu_usage.parse::<f64>().unwrap()));
         }
 
 
@@ -62,7 +59,7 @@ impl LogAnalytics {
     pub fn prune_old_data(&mut self) {
 
         let current_time = Utc::now();
-        let window_start = current_time - Duration::from_secs(self.window_size);
+        let window_start = current_time - Duration::from_secs(self.window_size as u64);
 
         self.window_start = window_start;
 
