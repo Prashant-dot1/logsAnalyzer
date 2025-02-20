@@ -1,6 +1,6 @@
-use std::{collections::HashMap, time::Duration};
+use std::{collections::HashMap, fs::metadata, time::Duration};
 use chrono::{DateTime, Utc};
-use crate::parser::ParsedLog;
+use crate::parser::{Level, ParsedLog};
 
 pub struct LogAnalytics {
     window_size: i64,
@@ -25,9 +25,38 @@ impl LogAnalytics {
         // prune the data
         self.prune_old_data();
 
+        if let Some(Level::Error) = log.level {
+            let error_type = log.metadata.get("error_type")
+                .and_then(|v| v.as_str())
+                .unwrap_or("unknown")
+                .to_string();
+
+            self.error_counts.entry(error_type).or_insert(0);
+
+            let mut val = self.error_counts.get_mut(&error_type).unwrap();
+            val += 1;
+        }
 
 
-    
+        // processing user activity
+        if let Some(user_id) = log.metadata.get("userid").and_then(|v| v.as_str()) {
+
+            self.user_activity
+                .entry(user_id.to_string()).or_default()
+                .push(log.timestamp.unwrap_or_else(|| Utc::now()));
+        }
+
+
+        // processing resouce usage
+        if let Some(cpu_usage) = log.metadata.get("cpu_usage").and_then(|v| v.as_str()) {
+
+            self.resource_usage
+            .entry(cpu_usage.to_string())
+            .or_default()
+            .push((log.timestamp.unwrap_or_else(|| Utc::now()) , cpu_usage.parse::<f64>()));
+        }
+
+
     }
 
     pub fn prune_old_data(&mut self) {
