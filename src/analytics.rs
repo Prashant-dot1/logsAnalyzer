@@ -2,6 +2,7 @@ use std::{collections::HashMap, time::Duration};
 use chrono::{DateTime, Utc};
 use crate::parser::{Level, ParsedLog};
 
+#[derive(Debug)]
 pub struct LogAnalytics {
     window_size: i64,
     error_counts: HashMap<String, usize>,
@@ -113,5 +114,83 @@ impl LogAnalytics {
             let sum = usage_data.iter().map(|(_ ,value)| value).sum::<f64>();
             sum / usage_data.len() as f64
         })
+    }
+}
+
+
+#[cfg(test)]
+mod tests {
+    use serde_json::json;
+
+    use super::*;
+    use std::sync::{Arc, Mutex};
+
+    fn resource_usage(i : i32) -> String {
+        match i {
+            0..5 => (i*10).to_string(),
+            _ => ((i-5)*20).to_string()
+        }
+    }
+
+
+    #[tokio::test]
+    async fn test_prune_data() {
+
+        let log_analytics = Arc::new(Mutex::new(LogAnalytics::new(100)));
+        let mut parsed_logs = Vec::new();
+
+        for i in 0..10 {
+            let parsed_log = ParsedLog {
+                timestamp : Some(Utc::now()),
+                level : Some(Level::Error),
+                message: format!("message {}", i),
+                metadata: json!({
+                    "userid" : format!("userid{}", i),
+                    "cpu_usage" : resource_usage(i),
+                    "error_type" : "Something is really wrong"
+                })
+            };
+
+            parsed_logs.push(parsed_log);
+        }
+
+
+        let mut handlers = Vec::new();
+        for log in parsed_logs.into_iter() {
+
+            let la_clone = log_analytics.clone();
+
+            let handler = tokio::spawn(async move {
+                if let Ok(mut la) = la_clone.lock() {
+                    la.process_log(log);
+                }
+            });
+
+            handlers.push(handler);
+        }
+
+        for handler in handlers {
+            if handler.await.is_err() {
+                panic!("there is an error")
+            }
+        }
+
+
+        // print log analytics
+        println!("log analytics: {:#?}", log_analytics.clone().lock().unwrap());
+
+        // get percentile count
+        if let Ok(la) = log_analytics.clone().lock() {
+            let active_user_count = la.get_active_users_count();
+            println!("active user count: {}", active_user_count);
+
+            // get resouce trend for 40.0
+
+            if let Some(trend) =  la.get_resource_usage_trend("40") {
+                println!("resource trend for 40 is: {}",trend);
+            }
+        }
+
+
     }
 }
