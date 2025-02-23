@@ -184,7 +184,7 @@ mod tests {
             let active_user_count = la.get_active_users_count();
             println!("active user count: {}", active_user_count);
 
-            // get resouce trend for 40.0
+            // get resouce trend for 40.0 , need to get this test case right
 
             if let Some(trend) =  la.get_resource_usage_trend("40") {
                 println!("resource trend for 40 is: {}",trend);
