@@ -1,9 +1,9 @@
-use std::error::Error;
-
 use async_trait::async_trait;
 use tokio::{io::{AsyncBufReadExt, BufReader}, net::TcpStream};
 
 use super::{LogSource, LogLine};
+use crate::error::LogAnalyzerError;
+use std::error::Error;
 
 pub struct NetworkLogSource {
     address: String,
@@ -87,10 +87,11 @@ impl NetworkLogSource {
 impl LogSource for NetworkLogSource {
 
     async fn init(&mut self) -> Result<(), Box<dyn Error + Send + Sync>> {
+        let stream = TcpStream::connect(&self.address)
+            .await
+            .map_err(|e| Box::new(LogAnalyzerError::NetworkError(e.to_string())))?;
 
-        let stream = TcpStream::connect(&self.address).await?;
         self.reader = Some(BufReader::new(stream));
-
         Ok(())
     }
 
@@ -138,7 +139,7 @@ impl LogSource for NetworkLogSource {
             Ok(None)
         }
         else {
-            Err("Source not initialised".into())
+            Err(Box::new(LogAnalyzerError::SourceNotInitialized))
         }
     }
 

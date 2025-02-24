@@ -3,6 +3,7 @@ use std::{any::Any, error::Error};
 use serde_json::Value;
 
 use crate::ingest::LogLine;
+use crate::error::LogAnalyzerError;
 
 use super::{Level, LogParser, ParsedLog};
 
@@ -37,7 +38,8 @@ impl LogParser for JsonParser {
     async fn parse(&self, log_line : LogLine) -> Result<ParsedLog, Box<dyn Error + Send + Sync>> {
         // Try to parse the normalized JSON string
         let normalized = JsonParser::normalize_json(&log_line.content);
-        let json_value = serde_json::from_str::<Value>(&normalized)?;
+        let json_value = serde_json::from_str::<Value>(&normalized)
+            .map_err(|e| LogAnalyzerError::LogFromatInvalid(e.to_string()))?;
 
         let message = json_value.get("message")
                         .and_then(|v| v.as_str())

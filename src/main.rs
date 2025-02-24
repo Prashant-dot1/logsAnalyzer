@@ -6,6 +6,7 @@ pub mod ingest;
 pub mod parser;
 pub mod engine;
 pub mod analytics;
+pub mod error;
 
 #[tokio::main]
 async fn main() -> Result<(), Box<dyn std::error::Error + Send + Sync>> {

@@ -1,6 +1,7 @@
 use std::{any::Any, error::Error};
 
 use crate::ingest::LogLine;
+use crate::error::LogAnalyzerError;
 
 use super::{json::JsonParser, plain_text::PlainTextParser, LogParser, ParsedLog};
 
@@ -23,15 +24,17 @@ impl ParserRegistry {
         serde_json::from_str::<serde_json::Value>(content).is_ok()
     }
 
-    fn select_parser(&self, log_line : &LogLine) -> Option<&Box<dyn LogParser>> {
+    fn select_parser(&self, log_line : &LogLine) -> Result<&Box<dyn LogParser>, LogAnalyzerError> {
 
         if ParserRegistry::try_parse_json(&log_line.content) {
             println!("Parser selected : JsonParser");
             self.parsers.iter().find(|p| p.as_any().is::<JsonParser>())
+            .ok_or(LogAnalyzerError::ParserNotFound)
         }
         else {
             println!("Parser selected : PlainTextParser");
             self.parsers.iter().find(|p| p.as_any().is::<PlainTextParser>())
+            .ok_or(LogAnalyzerError::ParserNotFound)
         }
     }
 }
@@ -40,8 +43,7 @@ impl ParserRegistry {
 #[async_trait::async_trait]
 impl LogParser for ParserRegistry {
     async fn parse(&self, log_line : LogLine) -> Result<ParsedLog, Box<dyn Error + Send + Sync>> {
-        let parser = self.select_parser(&log_line).ok_or("no parser found")?;
-
+        let parser = self.select_parser(&log_line)?;
         parser.parse(log_line).await
     }
 
@@ -53,7 +55,7 @@ impl LogParser for ParserRegistry {
 
 #[cfg(test)]
 mod tests {
-    use crate::{ingest::{file_source::FileLogSource, LogSource}, parser::registry};
+    use crate::ingest::{file_source::FileLogSource, LogSource};
 
     use super::*;
 
