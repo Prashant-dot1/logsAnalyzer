@@ -5,6 +5,8 @@ use chrono::Utc;
 use tokio::io::AsyncBufReadExt;
 use tokio::{fs::File, io::BufReader};
 
+use crate::error::LogAnalyzerError;
+
 use super::LogSource;
 use super::LogLine;
 use async_trait;
@@ -36,7 +38,10 @@ impl LogSource for FileLogSource {
 
     async fn init(&mut self) -> Result<(), Box<dyn Error + Send + Sync>> {
 
-        let file = tokio::fs::File::open(&self.path).await?;
+        let file = tokio::fs::File::open(&self.path).await
+            .map_err(|e| LogAnalyzerError::Io(e))?;
+
+
         self.reader = Some(BufReader::new(file));
 
         Ok(())
@@ -49,7 +54,8 @@ impl LogSource for FileLogSource {
 
             loop {
                 let mut line = String::new();
-                let bytes_read =reader.read_line(&mut line).await?;
+                let bytes_read =reader.read_line(&mut line).await
+                    .map_err(|e| LogAnalyzerError::Io(e))?;
 
                 if bytes_read == 0 {
                     return Ok(None);
@@ -67,7 +73,7 @@ impl LogSource for FileLogSource {
             }
         }
         else {
-            Err("Source not initialised".into())
+            Err(Box::new(LogAnalyzerError::SourceNotInitialized))
         }
     }
 
