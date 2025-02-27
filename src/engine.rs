@@ -4,7 +4,7 @@ use std::{error::Error, sync::Arc};
 use futures::lock::Mutex;
 use tokio::sync::mpsc;
 
-use crate::{analytics::{self, LogAnalytics}, ingest::LogSource, parser::{LogParser, ParsedLog}};
+use crate::{analytics::LogAnalytics, ingest::LogSource, parser::{LogParser, ParsedLog}};
 
 pub struct Engine {
     sources : Vec<Box<dyn LogSource>>,
