@@ -1,4 +1,4 @@
-use ingest::{file_source::FileLogSource, network_source::NetworkLogSource};
+use ingest::network_source::NetworkLogSource;
 use parser::{json::JsonParser, plain_text::PlainTextParser, registry::ParserRegistry};
 use engine::Engine;
 

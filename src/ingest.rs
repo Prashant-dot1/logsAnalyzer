@@ -1,5 +1,5 @@
-use std::{error::Error};
 use async_trait::async_trait;
+use std::error::Error;
 
 /* inner modules */
 pub mod file_source;
