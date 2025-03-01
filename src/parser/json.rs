@@ -73,7 +73,8 @@ impl LogParser for JsonParser {
             timestamp,
             level,
             message,
-            metadata
+            metadata,
+            ..ParsedLog::default()
         })
 
 

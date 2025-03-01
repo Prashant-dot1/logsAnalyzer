@@ -148,7 +148,8 @@ mod tests {
                     "userid" : format!("userid{}", i),
                     "cpu_usage" : resource_usage(i),
                     "error_type" : "Something is really wrong"
-                })
+                }),
+                ..Default::default()
             };
 
             parsed_logs.push(parsed_log);

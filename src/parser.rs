@@ -42,7 +42,7 @@ pub trait LogParser : 'static + Send + Sync {
 
 impl ParsedLog {
     pub fn to_json(&self) -> serde_json::Value {
-        json!({
+        serde_json::json!({
             "timestamp": self.timestamp.map(|t| t.to_rfc3339()),
             "level": self.level.as_ref().map(|l| format!("{:?}", l)),
             "message": self.message,
@@ -68,6 +68,50 @@ impl ParsedLog {
             Some(Level::Trace) => 6,
             None => 7,
         }
+    }
+}
+
+impl Default for ParsedLog {
+    fn default() -> Self {
+        Self {
+            timestamp: None,
+            level: None,
+            message: String::new(),
+            metadata: serde_json::Value::Object(serde_json::Map::new()),
+            service_name: None,
+            trace_id: None,
+            span_id: None,
+            duration_ms: None,
+            host: None,
+            environment: None,
+            version: None,
+        }
+    }
+}
+
+impl ParsedLog {
+    pub fn new(message: String) -> Self {
+        Self {
+            message,
+            timestamp: Some(chrono::Utc::now()),
+            ..Default::default()
+        }
+    }
+
+    pub fn with_level(mut self, level: Level) -> Self {
+        self.level = Some(level);
+        self
+    }
+
+    pub fn with_service(mut self, service: impl Into<String>) -> Self {
+        self.service_name = Some(service.into());
+        self
+    }
+
+    pub fn with_trace_context(mut self, trace_id: impl Into<String>, span_id: impl Into<String>) -> Self {
+        self.trace_id = Some(trace_id.into());
+        self.span_id = Some(span_id.into());
+        self
     }
 }
 

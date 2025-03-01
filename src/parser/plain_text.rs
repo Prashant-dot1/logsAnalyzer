@@ -20,7 +20,8 @@ impl LogParser for PlainTextParser {
             timestamp : Some(chrono::Utc::now()),
             level: None,
             message: log_line.content,
-            metadata: serde_json::Value::Object(serde_json::Map::new())
+            metadata: serde_json::Value::Object(serde_json::Map::new()),
+            ..ParsedLog::default()
         })
     }
 
